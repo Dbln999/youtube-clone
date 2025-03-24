@@ -7,3 +7,4 @@ export const categoriesRouter = createTRPCRouter({
     return db.select().from(categories);
   }),
 });
+
