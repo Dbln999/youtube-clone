@@ -13,6 +13,7 @@ import { VideoThumbnail } from "@/modules/videos/ui/components/video-thumbnail";
 
 import { cva, type VariantProps } from "class-variance-authority";
 import Link from "next/link";
+import { useMemo } from "react";
 
 const videoRowCardVariants = cva("group flex min-w-0", {
   variants: {
@@ -52,6 +53,18 @@ export const VideoRowCard = ({
   onRemove,
   size = "default",
 }: VideoRowCardProps) => {
+  const compactViews = useMemo(() => {
+    return Intl.NumberFormat("en", {
+      notation: "compact",
+    }).format(data.viewCount); //
+  }, [data.viewCount]);
+
+  const compactLikes = useMemo(() => {
+    return Intl.NumberFormat("en", {
+      notation: "compact",
+    }).format(data.likeCount); //
+  }, [data.likeCount]);
+
   return (
     <div className={videoRowCardVariants({ size })}>
       <Link href={`/video/${data.id}`} className={thumbnailVariants({ size })}>
@@ -77,7 +90,7 @@ export const VideoRowCard = ({
 
             {size === "default" && (
               <p className="text-muted-foreground text-xs mt-1">
-                {data.viewCount} views • {data.likeCount} likes
+                {compactViews} views • {compactLikes} likes
               </p>
             )}
             {size === "default" && (
@@ -111,7 +124,7 @@ export const VideoRowCard = ({
             )}
             {size === "compact" && (
               <p className="text-xs text-muted-foreground mt-1">
-                {data.viewCount} views • {data.likeCount} likes
+                {compactViews} views • {compactLikes} likes
               </p>
             )}
           </Link>
