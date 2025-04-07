@@ -1,33 +1,5 @@
 "use client";
 
-import { trpc } from "@/trpc/client";
-import { Suspense, useState } from "react";
-import { ErrorBoundary } from "react-error-boundary";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
 import {
   CopyCheckIcon,
   CopyIcon,
@@ -40,22 +12,48 @@ import {
   SparklesIcon,
   TrashIcon,
 } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { videoUpdateSchema } from "@/db/schema";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
-import { VideoPlayer } from "@/modules/videos/ui/components/video-player";
-import Link from "next/link";
-import { snakeCaseToTitle } from "@/lib/utils";
-import { useRouter } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Suspense, useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import { ErrorBoundary } from "react-error-boundary";
 import Image from "next/image";
-import { THUMBNAIL_FALLBACK } from "@/modules/videos/consts";
-import { ThumbnailUploadModal } from "@/modules/studio/ui/components/thumbnail-upload-modal";
-import { ThumbnailGenerateModal } from "@/modules/studio/ui/components/thumbnail-generate-modal";
+import { Input } from "@/components/ui/input";
+import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
+import { THUMBNAIL_FALLBACK } from "@/modules/videos/consts";
+import { Textarea } from "@/components/ui/textarea";
+import { ThumbnailGenerateModal } from "@/modules/studio/ui/components/thumbnail-generate-modal";
+import { ThumbnailUploadModal } from "@/modules/studio/ui/components/thumbnail-upload-modal";
+import { VideoPlayer } from "@/modules/videos/ui/components/video-player";
+import { snakeCaseToTitle } from "@/lib/utils";
+import { toast } from "sonner";
+import { trpc } from "@/trpc/client";
+import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
+import { videoUpdateSchema } from "@/db/schema";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 interface FormSectionProps {
   videoId: string;
@@ -153,6 +151,18 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
     },
   });
 
+  const revalidate = trpc.videos.revalidate.useMutation({
+    onSuccess: () => {
+      utils.studio.getMany.invalidate();
+      utils.studio.getOne.invalidate({ id: videoId });
+      toast.success("Video revalidated");
+      router.push("/studio");
+    },
+    onError: () => {
+      toast.error("Something went wrong");
+    },
+  });
+
   const restoreThumbnail = trpc.videos.restoreThumbnail.useMutation({
     onSuccess: () => {
       utils.studio.getMany.invalidate();
@@ -195,7 +205,9 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
     await update.mutateAsync(data);
   };
 
-  const fullUrl = `${process.env.VERCEL_URL || "http://localhost:3000"}/videos/${video.id}`;
+  const fullUrl = `${
+    process.env.VERCEL_URL || "http://localhost:3000"
+  }/videos/${video.id}`;
   const [isCopied, setIsCopied] = useState(false);
 
   const onCopy = async () => {
@@ -242,6 +254,12 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => revalidate.mutate({ id: video.id })}
+                  >
+                    <RotateCcwIcon className="size-4 mr-2" />
+                    Revalidate
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => remove.mutate({ id: video.id })}
                   >
