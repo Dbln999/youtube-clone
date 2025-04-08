@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/select";
 import { Suspense, useState } from "react";
 
+import { APP_URL } from "@/constants";
 import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "react-error-boundary";
 import Image from "next/image";
@@ -205,9 +206,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
     await update.mutateAsync(data);
   };
 
-  const fullUrl = `${
-    process.env.VERCEL_URL || "http://localhost:3000"
-  }/videos/${video.id}`;
+  const fullUrl = `${APP_URL}/videos/${video.id}`;
   const [isCopied, setIsCopied] = useState(false);
 
   const onCopy = async () => {
