@@ -1,4 +1,17 @@
 import {
+  subscriptions,
+  users,
+  videoReactions,
+  videoUpdateSchema,
+  videoViews,
+  videos,
+} from "@/db/schema";
+import {
+  baseProcedure,
+  createTRPCRouter,
+  protectedProcedure,
+} from "@/trpc/init";
+import {
   and,
   desc,
   eq,
@@ -8,25 +21,12 @@ import {
   lt,
   or,
 } from "drizzle-orm";
-import {
-  baseProcedure,
-  createTRPCRouter,
-  protectedProcedure,
-} from "@/trpc/init";
-import {
-  subscriptions,
-  users,
-  videoReactions,
-  videoUpdateSchema,
-  videoViews,
-  videos,
-} from "@/db/schema";
 
-import { TRPCError } from "@trpc/server";
-import { UTApi } from "uploadthing/server";
 import { db } from "@/db";
 import { mux } from "@/lib/mux";
 import { workflow } from "@/lib/workflow";
+import { TRPCError } from "@trpc/server";
+import { UTApi } from "uploadthing/server";
 import { z } from "zod";
 
 export const videosRouter = createTRPCRouter({
@@ -34,6 +34,7 @@ export const videosRouter = createTRPCRouter({
     .input(
       z.object({
         categoryId: z.string().uuid().nullish(),
+        userId: z.string().uuid().nullish(),
         cursor: z
           .object({
             id: z.string().uuid(),
@@ -44,7 +45,7 @@ export const videosRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const { cursor, limit, categoryId } = input;
+      const { cursor, limit, categoryId, userId } = input;
 
       const data = await db
         .select({
@@ -72,6 +73,7 @@ export const videosRouter = createTRPCRouter({
           and(
             eq(videos.visibility, "public"),
             categoryId ? eq(videos.categoryId, categoryId) : undefined,
+            userId ? eq(videos.userId, userId) : undefined,
             cursor
               ? or(
                   lt(videos.updatedAt, cursor.updatedAt),
