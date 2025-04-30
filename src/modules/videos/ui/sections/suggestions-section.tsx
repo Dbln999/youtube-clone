@@ -53,10 +53,7 @@ export const SuggestionsSection = ({
   );
 };
 
-const SuggestionsSectionSuspense = ({
-  videoId,
-  isManual,
-}: SuggestionsSectionProps) => {
+const SuggestionsSectionSuspense = ({ videoId }: SuggestionsSectionProps) => {
   const [suggestions, query] =
     trpc.suggestions.getMany.useSuspenseInfiniteQuery(
       {

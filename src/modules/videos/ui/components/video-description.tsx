@@ -1,7 +1,6 @@
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { desc } from "drizzle-orm";
 import { useState } from "react";
 
 interface VideoDescriptionProps {

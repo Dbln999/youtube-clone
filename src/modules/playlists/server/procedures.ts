@@ -1,3 +1,5 @@
+import { and, desc, eq, getTableColumns, lt, or, sql } from "drizzle-orm";
+import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import {
   playlistVideos,
   playlists,
@@ -6,11 +8,9 @@ import {
   videoViews,
   videos,
 } from "@/db/schema";
-import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
-import { and, desc, eq, getTableColumns, lt, or, sql } from "drizzle-orm";
 
-import { db } from "@/db";
 import { TRPCError } from "@trpc/server";
+import { db } from "@/db";
 import { z } from "zod";
 
 export const playlistsRouter = createTRPCRouter({
@@ -60,14 +60,14 @@ export const playlistsRouter = createTRPCRouter({
         limit: z.number().min(1).max(100),
       })
     )
-    .query(async ({ input, ctx }) => {
+    .query(async ({ input }) => {
       const { cursor, limit, playlistId } = input;
-      const { id: userId } = ctx.user;
+      // const { id: userId } = ctx.user;
 
-      const [existingPlaylist] = await db
-        .select()
-        .from(playlists)
-        .where(and(eq(playlists.id, playlistId), eq(playlists.userId, userId)));
+      // const [existingPlaylist] = await db
+      //   .select()
+      //   .from(playlists)
+      //   .where(and(eq(playlists.id, playlistId), eq(playlists.userId, userId)));
 
       const videosFromPlaylist = db.$with("playlist_videos").as(
         db
