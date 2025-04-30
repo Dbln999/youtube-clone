@@ -1,10 +1,10 @@
+import { db } from "@/db";
+import { users, videos } from "@/db/schema";
+import { auth } from "@clerk/nextjs/server";
+import { and, eq } from "drizzle-orm";
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { UploadThingError, UTApi } from "uploadthing/server";
 import { z } from "zod";
-import { auth } from "@clerk/nextjs/server";
-import { db } from "@/db";
-import { users, videos } from "@/db/schema";
-import { and, eq } from "drizzle-orm";
 
 const f = createUploadthing();
 
@@ -18,7 +18,7 @@ export const ourFileRouter = {
     .input(
       z.object({
         videoId: z.string().uuid(),
-      }),
+      })
     )
     .middleware(async ({ input }) => {
       const { userId: clerkUserId } = await auth();
@@ -60,10 +60,49 @@ export const ourFileRouter = {
         .where(
           and(
             eq(videos.id, metadata.videoId),
-            eq(videos.userId, metadata.user.id),
-          ),
+            eq(videos.userId, metadata.user.id)
+          )
         );
       return { uploadedBy: metadata.user.id };
+    }),
+  bannerUploader: f({
+    image: {
+      maxFileSize: "4MB",
+      maxFileCount: 1,
+    },
+  })
+    .middleware(async () => {
+      const { userId: clerkUserId } = await auth();
+
+      if (!clerkUserId) throw new UploadThingError("Unauthorized");
+
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.clerkId, clerkUserId));
+
+      if (!user) throw new UploadThingError("Unauthorized");
+
+      if (user.bannerKey) {
+        const utApi = new UTApi();
+        await utApi.deleteFiles(user.bannerKey);
+        await db
+          .update(users)
+          .set({ bannerKey: null, bannerUrl: null })
+          .where(eq(users.id, user.id));
+      }
+
+      return { userId: user.id };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      await db
+        .update(users)
+        .set({
+          bannerUrl: file.url,
+          bannerKey: file.key,
+        })
+        .where(eq(users.id, metadata.userId));
+      return { uploadedBy: metadata.userId };
     }),
 } satisfies FileRouter;
 
