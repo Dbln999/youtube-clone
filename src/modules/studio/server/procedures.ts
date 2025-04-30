@@ -1,9 +1,16 @@
+import {
+  comments,
+  users,
+  videoReactions,
+  videoViews,
+  videos,
+} from "@/db/schema";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import { and, desc, eq, getTableColumns, lt, or } from "drizzle-orm";
+
 import { db } from "@/db";
-import { videos } from "@/db/schema";
-import { z } from "zod";
-import { and, desc, eq, lt, or } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
+import { z } from "zod";
 
 export const studioRouter = createTRPCRouter({
   getOne: protectedProcedure
@@ -33,14 +40,27 @@ export const studioRouter = createTRPCRouter({
           })
           .nullish(),
         limit: z.number().min(1).max(100),
-      }),
+      })
     )
     .query(async ({ ctx, input }) => {
       const { cursor, limit } = input;
       const { id: userId } = ctx.user;
       const data = await db
-        .select()
+        .select({
+          ...getTableColumns(videos),
+          viewCount: db.$count(videoViews, eq(videoViews.videoId, videos.id)),
+          commentCount: db.$count(comments, eq(comments.videoId, videos.id)),
+          likeCount: db.$count(
+            videoReactions,
+            and(
+              eq(videoReactions.type, "like"),
+              eq(videoReactions.videoId, videos.id)
+            )
+          ),
+          user: users,
+        })
         .from(videos)
+        .innerJoin(users, eq(videos.userId, users.id))
         .where(
           and(
             eq(videos.userId, userId),
@@ -49,11 +69,11 @@ export const studioRouter = createTRPCRouter({
                   lt(videos.updatedAt, cursor.updatedAt),
                   and(
                     eq(videos.updatedAt, cursor.updatedAt),
-                    lt(videos.id, cursor.id),
-                  ),
+                    lt(videos.id, cursor.id)
+                  )
                 )
-              : undefined,
-          ),
+              : undefined
+          )
         )
         .orderBy(desc(videos.updatedAt), desc(videos.id))
         .limit(limit + 1);

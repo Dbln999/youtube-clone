@@ -1,9 +1,6 @@
 "use client";
-import { trpc } from "@/trpc/client";
-import { DEFAULT_LIMIT } from "@/constants";
-import { Suspense } from "react";
-import { ErrorBoundary } from "react-error-boundary";
-import { InfiniteScroll } from "@/components/infinite-scroll";
+
+import { Globe2Icon, LockIcon } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -12,12 +9,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
+import { DEFAULT_LIMIT } from "@/constants";
+import { ErrorBoundary } from "react-error-boundary";
+import { InfiniteScroll } from "@/components/infinite-scroll";
 import Link from "next/link";
-import { VideoThumbnail } from "@/modules/videos/ui/components/video-thumbnail";
-import { snakeCaseToTitle } from "@/lib/utils";
-import { format } from "date-fns";
-import { Globe2Icon, LockIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Suspense } from "react";
+import { VideoThumbnail } from "@/modules/videos/ui/components/video-thumbnail";
+import { format } from "date-fns";
+import { snakeCaseToTitle } from "@/lib/utils";
+import { trpc } from "@/trpc/client";
 
 export const VideosSection = () => {
   return (
@@ -91,7 +93,7 @@ const VideosSectionSuspense = () => {
     },
     {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
-    },
+    }
   );
   return (
     <div>
@@ -156,12 +158,14 @@ const VideosSectionSuspense = () => {
                     <TableCell className="text-sm truncate">
                       {format(new Date(video.createdAt), "d MMM yyyy")}
                     </TableCell>
-                    <TableCell className="text-right text-sm">views</TableCell>
                     <TableCell className="text-right text-sm">
-                      comments
+                      {video.viewCount}
+                    </TableCell>
+                    <TableCell className="text-right text-sm">
+                      {video.commentCount}
                     </TableCell>
                     <TableCell className="text-right text-sm pr-6">
-                      likes
+                      {video.likeCount}
                     </TableCell>
                   </TableRow>
                 </Link>
